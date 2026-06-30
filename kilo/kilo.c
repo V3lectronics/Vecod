@@ -18,6 +18,10 @@
 struct termios orig_termios;
 
 void die(const char *s){
+	// \x1b is an escape character
+	write(STDOUT_FILENO, "\x1b[2J", 4);//clear
+	write(STDOUT_FILENO, "\x1b[H", 3);//move cursor to 1,1
+
 	perror(s);
 	exit(1);
 }
@@ -43,8 +47,7 @@ void enableRawMode() {
 	if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) die("tcsetattr");
 }
 
-char editorReadKey()
-{
+char editorReadKey(){
 	int nread;
 	char c;
 	while ((nread = read(STDIN_FILENO, &c, 1)) != 1) {
@@ -55,16 +58,26 @@ char editorReadKey()
 
 /* output */
 
-void editorRefreshScreen(void)
-{
+void editorDrawsRows(void){
+	int y;
+	for (y=0; y<24; y++) {
+		write(STDOUT_FILENO, "~\r\n", 3);
+	}
+}
+
+void editorRefreshScreen(void){
 	// \x1b is an escape character
-	write(STDOUT_FILENO, "\x1b[2J", 4);
+	write(STDOUT_FILENO, "\x1b[2J", 4);//clear
+	write(STDOUT_FILENO, "\x1b[H", 3);//move cursor to 1,1
+
+	editorDrawsRows();
+
 	write(STDOUT_FILENO, "\x1b[H", 3);
 }
 
 /* input */
 
-void editorProcessKeypress(void) {
+void editorProcessKeypress(void){
 	char c = editorReadKey();
 
 	switch (c) {
