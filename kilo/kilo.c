@@ -3,6 +3,7 @@
 #include <asm-generic/errno-base.h>
 #include <ctype.h>
 #include <errno.h>
+#include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <termios.h>
@@ -52,6 +53,15 @@ char editorReadKey()
 	return c;
 }
 
+/* output */
+
+void editorRefreshScreen(void)
+{
+	// \x1b is an escape character
+	write(STDOUT_FILENO, "\x1b[2J", 4);
+	write(STDOUT_FILENO, "\x1b[H", 3);
+}
+
 /* input */
 
 void editorProcessKeypress(void) {
@@ -71,6 +81,7 @@ int main(){
 	enableRawMode();
 
 	while (1) {
+		editorRefreshScreen();
 		editorProcessKeypress();
 	}
 
