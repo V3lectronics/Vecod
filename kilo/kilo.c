@@ -14,6 +14,8 @@
 
 /* defines */
 
+#define KILO_VERSION "0.0.1"
+
 #define CTRL_KEY(k) ((k) & 0x1f)
 
 /* data */
@@ -126,9 +128,18 @@ int getWindowSize(int *rows, int *cols){
 void editorDrawsRows(struct abuf *ab){
 	int y;
 	for (y=0; y<E.screenrows; y++) {
-		abAppend(ab, "~", 1);
+		if (y == E.screenrows / 3) {
+			char welcome[80];
+			int welcomelen = snprintf(welcome, sizeof(welcome),
+					"Kilo editor -- version %s", KILO_VERSION);
+			if (welcomelen > E.screencols) welcomelen = E.screencols;
+			abAppend(ab, welcome, welcomelen);
+			} else {
+				abAppend(ab, "~", 1);
+			}
+		abAppend(ab, "\x1b[K", 3);//erase part of line to right of cursor
 		if (y < E.screenrows - 1) {
-			abAppend(ab, "\r\n", 2);
+			abAppend(ab, "\r\n", 2);//return and newline
 		}
 	}
 }
@@ -136,12 +147,13 @@ void editorDrawsRows(struct abuf *ab){
 void editorRefreshScreen(void){
 	struct abuf ab = ABUF_INIT;
 	// \x1b is an escape character
-	abAppend(&ab, "\x1b[2J", 4);//clear
+	abAppend(&ab, "\x1b[?25l", 6);//hide cursor
 	abAppend(&ab, "\x1b[H", 3);//move cursor to 1,1
 
 	editorDrawsRows(&ab);
 
 	abAppend(&ab, "\x1b[H", 3);//move cursor to 1,1
+	abAppend(&ab, "\x1b[?25h", 6);//show cursor
 	
 	write(STDOUT_FILENO, ab.b, ab.len);
 	abFree(&ab);
