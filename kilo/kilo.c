@@ -123,24 +123,28 @@ int getWindowSize(int *rows, int *cols){
 
 /* output */
 
-void editorDrawsRows(void){
+void editorDrawsRows(struct abuf *ab){
 	int y;
 	for (y=0; y<E.screenrows; y++) {
-		write(STDOUT_FILENO, "~", 1);
+		abAppend(ab, "~", 1);
 		if (y < E.screenrows - 1) {
-			write(STDOUT_FILENO, "\r\n", 2);
+			abAppend(ab, "\r\n", 2);
 		}
 	}
 }
 
 void editorRefreshScreen(void){
+	struct abuf ab = ABUF_INIT;
 	// \x1b is an escape character
-	write(STDOUT_FILENO, "\x1b[2J", 4);//clear
-	write(STDOUT_FILENO, "\x1b[H", 3);//move cursor to 1,1
+	abAppend(&ab, "\x1b[2J", 4);//clear
+	abAppend(&ab, "\x1b[H", 3);//move cursor to 1,1
 
-	editorDrawsRows();
+	editorDrawsRows(&ab);
 
-	write(STDOUT_FILENO, "\x1b[H", 3);
+	abAppend(&ab, "\x1b[H", 3);//move cursor to 1,1
+	
+	write(STDOUT_FILENO, ab.b, ab.len);
+	abFree(&ab);
 }
 
 /* input */
