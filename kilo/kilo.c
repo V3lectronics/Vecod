@@ -21,6 +21,7 @@
 /* data */
 
 struct editorConfig {
+	int cx, cy;
 	int screenrows;
 	int screencols;
 	struct termios orig_termios;
@@ -96,6 +97,7 @@ struct abuf {
 
 #define ABUF_INIT {NULL, 0}
 
+//append to buffer
 void abAppend(struct abuf *ab, const char *s, int len) {
 	char *new = realloc(ab->b, ab->len + len);
 
@@ -105,6 +107,7 @@ void abAppend(struct abuf *ab, const char *s, int len) {
 	ab->len += len;
 }
 
+//free buffer memory
 void abFree(struct abuf *ab){
 	free(ab->b);
 }
@@ -158,7 +161,11 @@ void editorRefreshScreen(void){
 
 	editorDrawsRows(&ab);
 
-	abAppend(&ab, "\x1b[H", 3);//move cursor to 1,1
+	//move cursor
+	char buf[32];
+	snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.cy + 1, E.cx + 1);
+	abAppend(&ab, buf, strlen(buf));
+
 	abAppend(&ab, "\x1b[?25h", 6);//show cursor
 	
 	write(STDOUT_FILENO, ab.b, ab.len);
@@ -181,6 +188,9 @@ void editorProcessKeypress(void){
 /* init */
 
 void initEditor(void){	
+	E.cx = 0; // column
+	E.cy = 0; // row
+
 	if (getWindowSize(&E.screenrows, &E.screencols) == -1) die("getWindowSize");
 }
 
