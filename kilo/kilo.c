@@ -66,7 +66,26 @@ char editorReadKey(){
 	while ((nread = read(STDIN_FILENO, &c, 1)) != 1) {
 		if (nread == -1 && errno != EAGAIN) die("read");
 	}
-	return c;
+	
+	if (c == '\x1b') {
+		char seq[3];
+
+		if (read(STDIN_FILENO, &seq[0], 1) != 1) return '\x1b';
+		if (read(STDIN_FILENO, &seq[1], 1) != 1) return '\x1b';
+
+		if (seq[0] == '[') {
+			switch (seq[1]) {
+				case 'A': return 'h';
+				case 'B': return 'j';
+				case 'C': return 'k';
+				case 'D': return 'l';
+			}	
+		}
+
+		return '\x1b';
+	} else {
+		return c;
+	}
 }
 
 int getCursorPosition(int *rows, int *cols) {
@@ -174,12 +193,35 @@ void editorRefreshScreen(void){
 
 /* input */
 
+void editorMoveCursor(char key){
+	switch (key) {
+		case 'h':
+			E.cx--;
+			break;
+		case 'l':
+			E.cx++;
+			break;
+		case 'k':
+			E.cy--;
+			break;
+		case 'j':
+			E.cy++;
+			break;
+	}
+}
+
 void editorProcessKeypress(void){
 	char c = editorReadKey();
 
 	switch (c) {
 		case CTRL_KEY('q'):
 			exit(0);
+			break;
+		case 'h':
+		case 'j':
+		case 'k':
+		case 'l':
+			editorMoveCursor(c);
 			break;
 	}
 
